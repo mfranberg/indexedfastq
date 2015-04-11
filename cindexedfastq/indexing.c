@@ -207,7 +207,7 @@ int create_index(BGZF *fastq_file, cmph_t *hash, char *seek_path)
         return 0;
     }
 
-    uint64_t *table = (uint64_t *) mmap( NULL, file_size, PROT_READ | PROT_WRITE, MAP_FILE | MAP_SHARED | MAP_NOCACHE, fd, 0 );
+    uint64_t *table = (uint64_t *) mmap( NULL, file_size, PROT_READ | PROT_WRITE, MAP_FILE | MAP_SHARED, fd, 0 );
     if( table == MAP_FAILED )
     {
         return 0;
@@ -320,7 +320,7 @@ open_fastq_index(char *fastq_path, char *index_prefix, struct fastq_index_t *ind
     fstat( index->lookup_fd, &sb );
     index->lookup_size = sb.st_size;
 
-    index->table = (uint64_t *) mmap( NULL, index->lookup_size, PROT_READ, MAP_FILE | MAP_SHARED | MAP_NOCACHE, index->lookup_fd, 0 );
+    index->table = (uint64_t *) mmap( NULL, index->lookup_size, PROT_READ, MAP_FILE | MAP_SHARED, index->lookup_fd, 0 );
     if( index->table == MAP_FAILED )
     {
         ret = IFQ_BAD_INDEX;
