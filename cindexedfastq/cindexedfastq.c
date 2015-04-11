@@ -111,7 +111,7 @@ c_indexed_fastq_t * open_index(char *fastq_path, char *index_prefix)
         }
         else
         {
-            PyErr_SetString( PyExc_IOError, "Error while creating the index." );
+            PyErr_SetString( PyExc_IOError, "Unknown error while reading the index." );
         }
 
         return NULL;
@@ -192,6 +192,17 @@ static PyObject *py_query_indexed_fastq(PyObject *self, PyObject *args)
 
 static PyObject *py_close_indexed_fastq(PyObject *self, PyObject *args)
 { 
+    c_indexed_fastq_t *cifq;
+
+    if( !PyArg_ParseTuple( args, "O!", &c_indexed_fastq_prototype, &cifq ) )
+    {
+        return NULL;
+    }
+
+    destroy_fastq_record( cifq->record );
+    destroy_fastq_index( &cifq->index );
+    cifq->record = NULL;
+
     Py_RETURN_NONE;
 }
 

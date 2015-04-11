@@ -34,7 +34,7 @@ class IndexedFastq:
 
     def close(self):
         if self.handle:
-            cfastq_close( self.handle )
+            handle = cindexedfastq.close_indexed_fastq( fastq_path, index_prefix )
             self.handle = None
 
 def create_indexed_fastq(fastq_path, index_prefix=None):
