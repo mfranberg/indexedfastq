@@ -1,4 +1,4 @@
-#include "indexing.h"
+#include <ifq.h>
 
 int main(int argc, char **argv)
 {
@@ -8,7 +8,7 @@ int main(int argc, char **argv)
         exit( 1 );
     }
 
-    if( index_fastq( argv[ 1 ], argv[ 2 ] ) != IFQ_OK )
+    if( ifq_create_index( argv[ 1 ], argv[ 2 ] ) != IFQ_OK )
     {
         printf( "Failed to create index\n" );
         return 1;

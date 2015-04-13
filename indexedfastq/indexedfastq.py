@@ -37,13 +37,16 @@ class IndexedFastq:
             handle = cindexedfastq.close_indexed_fastq( fastq_path, index_prefix )
             self.handle = None
 
-def create_indexed_fastq(fastq_path, index_prefix=None):
+def create_indexed_fastq(fastq_path, index_prefix=None, open=True):
     if not index_prefix:
         index_prefix = fastq_path
 
     cindexedfastq.create_indexed_fastq( fastq_path, index_prefix )
 
-    return cindexedfastq.open_indexed_fastq( fastq_path, index_prefix )
+    if open:
+        return cindexedfastq.open_indexed_fastq( fastq_path, index_prefix )
+    else:
+        return None
 
 def open_indexed_fastq(fastq_path, index_prefix=None):
     if not index_prefix:

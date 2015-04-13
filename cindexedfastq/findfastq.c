@@ -1,4 +1,4 @@
-#include "indexing.h"
+#include <ifq.h>
 
 int main(int argc, char **argv)
 {
@@ -8,15 +8,15 @@ int main(int argc, char **argv)
         exit( 1 );
     }
 
-    struct fastq_index_t index;
-    if( open_fastq_index( argv[ 1 ], argv[ 2 ], &index ) != IFQ_OK )
+    ifq_index_t index;
+    if( ifq_open_index( argv[ 1 ], argv[ 2 ], &index ) != IFQ_OK )
     {
         printf( "error: Could not open index." );
         exit( 1 );
     }
 
-    struct fastq_record_t *record = new_fastq_record( );
-    if( query_fastq_index( &index, argv[ 3 ], record ) == IFQ_OK )
+    ifq_record_t *record = ifq_new_record( );
+    if( ifq_query_index( &index, argv[ 3 ], record ) == IFQ_OK )
     {
         printf( "%s\n%s\n%s\n", record->name, record->sequence, record->quality );
     }
@@ -25,8 +25,8 @@ int main(int argc, char **argv)
         printf( "record not found\n" );
     }
 
-    destroy_fastq_record( record );
-    destroy_fastq_index( &index );
+    ifq_destroy_record( record );
+    ifq_destroy_index( &index );
 
     return 0;
 }

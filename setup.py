@@ -42,7 +42,7 @@ bgzf_src_files = [
 ]
 
 cindexedfastq_src_files = [
-    "cindexedfastq/indexing.c",
+    "cindexedfastq/ifq.c",
     "cindexedfastq/cindexedfastq.c"
 ]
 
@@ -112,6 +112,7 @@ setup(name='indexedfastq',
     # pip to create the appropriate form of executable for the target platform.
     entry_points={
         'console_scripts': [
+            'indexfastq=indexedfastq.tools.run_indexfastq:main',
         ]
     }
 )

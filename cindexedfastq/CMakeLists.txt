@@ -22,6 +22,7 @@ configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/config.h.in ${CMAKE_CURRENT_BINARY_D
 include_directories( "lib/cmph/src/" )
 include_directories( "lib/bgzf/" )
 include_directories( ${CMAKE_CURRENT_BINARY_DIR} )
+include_directories( "." )
 
 set( CMPH_LIST
 lib/cmph/src/bdz.c
@@ -55,8 +56,8 @@ lib/cmph/src/vstack.c
 
 add_library( cmph ${CMPH_LIST} )
 
-add_executable( indexfastq indexfastq.c indexing.c lib/bgzf/bgzf.c )
-target_link_libraries( indexfastq cmph z )
+add_executable( indexfastq indexfastq.c ifq.c lib/bgzf/bgzf.c )
+target_link_libraries( indexfastq cmph z m )
 
-add_executable( findfastq findfastq.c indexing.c lib/bgzf/bgzf.c )
-target_link_libraries( findfastq cmph z )
+add_executable( findfastq findfastq.c ifq.c lib/bgzf/bgzf.c )
+target_link_libraries( findfastq cmph z m )

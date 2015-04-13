@@ -6,7 +6,7 @@
 #include <sys/mman.h>
 #include <bgzf.h>
 
-#include "indexing.h"
+#include <ifq.h>
 
 /**
  * Concatenates the given strings and returns the concatenated
@@ -34,7 +34,7 @@ concatenate(const char *a, const char *b)
 char *
 bgzf_fgets(char *buffer, size_t buffer_size, BGZF *fp)
 {
-    char c;
+    char c = 0;
     size_t i = 0;
     while( i < buffer_size - 1 && ((c = bgzf_getc( fp )) > 0) )
     {
@@ -96,7 +96,7 @@ size_t count_fastq_sequences(BGZF *fastq_file)
     while( 1 )
     {
         char buffer[ BUFSIZ ];
-        size_t bytes_read = bgzf_read( fastq_file, buffer, BUFSIZ );
+        ssize_t bytes_read = bgzf_read( fastq_file, buffer, BUFSIZ );
         if( bytes_read <= 0 )
         {
             break;
@@ -124,8 +124,7 @@ int key_fastq_read(void *data, char **key, cmph_uint32 *keylen)
     *keylen = 0;
     /* Find header start */
     while( ( c = bgzf_getc( fp ) ) != '@' && c >= 0 )
-    {
-    }
+    { }
 
     *key = NULL;
     if( read_one_line( key, keylen, fp ) == 1 )
@@ -160,7 +159,15 @@ cmph_io_fastq_adapter(BGZF *fastq_file)
     key_source->dispose = key_fastq_dispose;
     key_source->rewind = key_fastq_rewind;
 
-    return key_source;
+    if( key_source->nkeys > 0 )
+    {
+        return key_source;
+    }
+    else
+    {
+        free( key_source );
+        return NULL;
+    }
 };
 
 void
@@ -221,7 +228,7 @@ int create_index(BGZF *fastq_file, cmph_t *hash, char *seek_path)
     return 1;
 }
 
-ifq_codes_t index_fastq(char *fastq_path, char *index_prefix)
+ifq_codes_t ifq_create_index(char *fastq_path, char *index_prefix)
 {
     char *hash_path = concatenate( index_prefix, ".hsh" );
     char *seek_path = concatenate( index_prefix, ".lup" );
@@ -244,6 +251,12 @@ ifq_codes_t index_fastq(char *fastq_path, char *index_prefix)
 
     /* Create hash function */
     cmph_io_adapter_t *source = cmph_io_fastq_adapter( fastq_file );
+    if( source == NULL )
+    {
+        ret = IFQ_BAD_HASH;
+        goto index_prefix_fail;
+    }
+
     cmph_config_t *config = cmph_config_new( source );
     cmph_config_set_algo( config, CMPH_CHD );
     cmph_config_set_mphf_fd( config, hash_file );
@@ -277,11 +290,11 @@ index_hash_fail:
 index_prefix_fail:
     bgzf_close( fastq_file );
 
-    return IFQ_OK;
+    return ret;
 }
 
 ifq_codes_t
-open_fastq_index(char *fastq_path, char *index_prefix, struct fastq_index_t *index)
+ifq_open_index(char *fastq_path, char *index_prefix, ifq_index_t *index)
 {
     char *hash_path = concatenate( index_prefix, ".hsh" );
     char *lookup_path = concatenate( index_prefix, ".lup" );
@@ -335,7 +348,7 @@ index_error:
 }
 
 void
-destroy_fastq_index(struct fastq_index_t *index)
+ifq_destroy_index(ifq_index_t *index)
 {
     if( index != NULL )
     {
@@ -348,7 +361,7 @@ destroy_fastq_index(struct fastq_index_t *index)
 }
 
 ifq_codes_t
-query_fastq_index(struct fastq_index_t *index, char *query, struct fastq_record_t *record)
+ifq_query_index(ifq_index_t *index, char *query, ifq_record_t *record)
 {
     // Find key
     unsigned int id = cmph_search( index->hash, query, (cmph_uint32) strlen( query ) );
@@ -374,10 +387,10 @@ query_fastq_index(struct fastq_index_t *index, char *query, struct fastq_record_
     return IFQ_OK;
 }
 
-struct fastq_record_t *
-new_fastq_record()
+ifq_record_t *
+ifq_new_record()
 {
-    struct fastq_record_t *record = (struct fastq_record_t *) malloc( sizeof( struct fastq_record_t ) );
+    ifq_record_t *record = (ifq_record_t *) malloc( sizeof( ifq_record_t ) );
     if( record != NULL )
     {
         record->name = NULL;
@@ -393,7 +406,7 @@ new_fastq_record()
 }
 
 void
-destroy_fastq_record(struct fastq_record_t *record)
+ifq_destroy_record(ifq_record_t *record)
 {
     if( record != NULL )
     {

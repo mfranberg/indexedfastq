@@ -1,6 +1,6 @@
 #include <Python.h>
 
-#include <indexing.h>
+#include <ifq.h>
 
 /**
  * Wrapper object for a indexed fastq file. In python it will
@@ -10,8 +10,8 @@ typedef struct
 {
     PyObject_HEAD
 
-    struct fastq_index_t index;
-    struct fastq_record_t *record;
+    ifq_index_t index;
+    ifq_record_t *record;
 } c_indexed_fastq_t;
 
 /**
@@ -24,8 +24,8 @@ c_indexed_fastq_dealloc(c_indexed_fastq_t *self)
 {
     if( self->record != NULL )
     {
-        destroy_fastq_record( self->record );
-        destroy_fastq_index( &self->index );
+        ifq_destroy_record( self->record );
+        ifq_destroy_index( &self->index );
         self->record = NULL;
         Py_TYPE( self )->tp_free( ( PyObject * ) self );
     }
@@ -96,9 +96,9 @@ static PyTypeObject c_indexed_fastq_prototype =
 
 c_indexed_fastq_t * open_index(char *fastq_path, char *index_prefix)
 {
-    struct fastq_index_t index;
+    ifq_index_t index;
     c_indexed_fastq_t *cifq;
-    ifq_codes_t status = open_fastq_index( fastq_path, index_prefix, &index );
+    ifq_codes_t status = ifq_open_index( fastq_path, index_prefix, &index );
     if( status != IFQ_OK )
     {
         if( status == IFQ_BAD_FASTQ )
@@ -119,7 +119,7 @@ c_indexed_fastq_t * open_index(char *fastq_path, char *index_prefix)
     
     cifq = (c_indexed_fastq_t *) c_indexed_fastq_prototype.tp_alloc( &c_indexed_fastq_prototype, 0 );
     cifq->index = index;
-    cifq->record = new_fastq_record( );
+    cifq->record = ifq_new_record( );
 
     return cifq;
 }
@@ -128,14 +128,13 @@ static PyObject *py_create_indexed_fastq(PyObject *self, PyObject *args)
 {
     char *fastq_path;
     char *index_prefix;
-    c_indexed_fastq_t *cifq;
 
     if( !PyArg_ParseTuple( args, "ss", &fastq_path, &index_prefix ) )
     {
         return NULL;
     }
     
-    ifq_codes_t status = index_fastq( fastq_path, index_prefix );
+    ifq_codes_t status = ifq_create_index( fastq_path, index_prefix );
     if( status != IFQ_OK )
     {
         if( status == IFQ_BAD_FASTQ )
@@ -160,7 +159,6 @@ static PyObject *py_open_indexed_fastq(PyObject *self, PyObject *args)
 {
     char *fastq_path;
     char *index_prefix;
-    c_indexed_fastq_t *cifq;
 
     if( !PyArg_ParseTuple( args, "ss", &fastq_path, &index_prefix ) )
     {
@@ -180,7 +178,7 @@ static PyObject *py_query_indexed_fastq(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    if( query_fastq_index( &cifq->index, query, cifq->record ) == IFQ_OK )
+    if( ifq_query_index( &cifq->index, query, cifq->record ) == IFQ_OK )
     {
         return Py_BuildValue( "sss", cifq->record->name, cifq->record->sequence, cifq->record->quality );
     }
@@ -199,8 +197,8 @@ static PyObject *py_close_indexed_fastq(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    destroy_fastq_record( cifq->record );
-    destroy_fastq_index( &cifq->index );
+    ifq_destroy_record( cifq->record );
+    ifq_destroy_index( &cifq->index );
     cifq->record = NULL;
 
     Py_RETURN_NONE;
